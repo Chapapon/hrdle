@@ -31,7 +31,12 @@ export interface ResolvedTarget {
 /** Sessions from the first server that answers, or null if none does. */
 export async function fetchSessions(port: number): Promise<SessionEntry[] | null> {
   try {
-    const res = await fetch(`https://localhost:${port}/api/sessions`);
+    // `?local=1` = this host's sessions only. The plain list now carries the
+    // peers' too (for the glasses), but this resolver answers "which session am
+    // I running in", which is always local — merged in, another host's session
+    // with the same cwd breaks the uniqueness check, and its pids pollute the
+    // ancestry match.
+    const res = await fetch(`https://localhost:${port}/api/sessions?local=1`);
     if (!res.ok) return null; // e.g. 401 when the server has a password set
     const json = (await res.json()) as { sessions?: SessionEntry[] };
     return json.sessions ?? null;

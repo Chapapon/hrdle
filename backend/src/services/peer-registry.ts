@@ -224,6 +224,14 @@ export async function deletePeer(id: string): Promise<boolean> {
 export async function setPeerOrder(orderedIds: string[]): Promise<void> {
   return withMutationLock(async () => {
     const store = await load();
+    // The local machine is orderable too. While nothing is stored, listPeers
+    // only synthesises an order-0 local row, so a position given for it had
+    // nowhere to be written and was silently dropped. Materialise it when it
+    // is named (the same shape the synthesis uses; the loop below writes the
+    // order, the same way updatePeer stores a local nickname/color).
+    if (orderedIds.includes(LOCAL_PEER_ID) && !store.peers.some(p => p.id === LOCAL_PEER_ID)) {
+      store.peers.push(localPeer());
+    }
     const indexById = new Map(orderedIds.map((id, i) => [id, i]));
     // Peers missing from the array fall to the end
     const maxIndex = orderedIds.length;

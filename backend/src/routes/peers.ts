@@ -26,6 +26,7 @@ import {
 } from '../services/peer-registry';
 import { loginToPeer, verifyPeer, peerFetch, PeerAuthError } from '../services/peer-auth';
 import { isSafePeerUrl } from '../services/peer-url';
+import { isPeerSessionId } from '../services/peer-sessions';
 import { discoverPeers } from '../services/peer-discovery';
 import { buildSessionsList, sessionHistoryService, agentHistoryProviders } from './sessions';
 import { getDashboard } from './dashboard';
@@ -519,7 +520,10 @@ peers.get('/sessions', async (c) => {
     }
 
     try {
-      const res = await peerFetch(peer.id, peer.url, peer.wsToken, '/api/sessions');
+      // `?local=1` asks for that machine's own sessions only. The plain list
+      // now merges the peers' in (for the glasses), so without it this would
+      // bring back "the sessions the peer holds of ours" and double them.
+      const res = await peerFetch(peer.id, peer.url, peer.wsToken, '/api/sessions?local=1');
       if (!res.ok) {
         errors.push({ peerId: peer.id, message: `HTTP ${res.status}` });
         return [];
@@ -529,7 +533,8 @@ peers.get('/sessions', async (c) => {
         errors.push({ peerId: peer.id, message: 'Invalid response' });
         return [];
       }
-      return data.sessions.map(enrich);
+      // A peer too old to know `?local=1` must still not double the list.
+      return data.sessions.filter(s => !isPeerSessionId(s.id)).map(enrich);
     } catch (err) {
       errors.push({ peerId: peer.id, message: err instanceof Error ? err.message : 'Fetch failed' });
       return [];
