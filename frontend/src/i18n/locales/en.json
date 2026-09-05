@@ -86,7 +86,8 @@
       "codex": "Codex",
       "grok": "Grok",
       "kimi": "Kimi",
-      "opencode": "OpenCode"
+      "opencode": "OpenCode",
+      "pi": "pi"
     },
     "workingDirectory": "Working Directory",
     "newFolder": "New Folder",

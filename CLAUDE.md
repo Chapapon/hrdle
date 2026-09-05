@@ -6,7 +6,7 @@ Codex and other coding agents should use this file as the single source of repos
 
 ## Project Overview
 
-Hrdle is a web-based terminal session manager for coding agents — Claude Code, Codex, Grok, Kimi and OpenCode. It runs them in herdr workspaces and provides a web UI for remote access from tablets/mobile devices.
+Hrdle is a web-based terminal session manager for coding agents — Claude Code, Codex, Grok, Kimi, OpenCode and pi. It runs them in herdr workspaces and provides a web UI for remote access from tablets/mobile devices.
 
 The product identity lives in `identity.json` — everything composed from it (service units, data directory, scratch paths, hook command, storage keys) follows without a call site changing.
 
@@ -786,7 +786,7 @@ Written down because it is easy to get wrong by assuming rather than looking.
 Anyone about to describe this product
 — a README, a store listing, the setup guide — should read this first.
 
-The agents are not the competition. Claude Code, Codex, Grok, Kimi and OpenCode are the
+The agents are not the competition. Claude Code, Codex, Grok, Kimi, OpenCode and pi are the
 things being run. The competition is:
 
 | | What it is | Where it wins |

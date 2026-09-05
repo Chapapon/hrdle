@@ -94,6 +94,19 @@ export const AGENT_PROVIDERS = {
     processPatterns: [/(?:^|\/)opencode(?:\s|$)/],
     supportsConversationMetadata: false,
   },
+  pi: {
+    id: 'pi',
+    command: 'pi',
+    // `--session` takes a session file, a full id or a partial one; `--session-id`
+    // would create the session when it is missing, which a resume must not.
+    resumeCommand: 'pi --session',
+    labelKey: 'session.agentProvider.pi',
+    displayName: 'pi',
+    // Two letters, so the boundary on both sides is what keeps `pip` and
+    // `/usr/lib/pipewire` out of it.
+    processPatterns: [/(?:^|\/)pi(?:\s|$)/],
+    supportsConversationMetadata: false,
+  },
 } as const;
 
 export type AgentProvider = keyof typeof AGENT_PROVIDERS;

@@ -5,7 +5,7 @@
 **Your agents, even away from the desk.**
 You are no longer in front of the PC. And still, the work moves on.
 
-Hrdle runs your coding agents — Claude Code, Codex, Grok, Kimi and OpenCode — on a machine
+Hrdle runs your coding agents — Claude Code, Codex, Grok, Kimi, OpenCode and pi — on a machine
 of yours, and puts the controls on your phone and on a pair of EVEN Realities G2 glasses.
 
 **Start work without opening a laptop.** Not just watching — starting. Create a session,
