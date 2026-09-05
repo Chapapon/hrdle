@@ -9,6 +9,7 @@
  */
 
 import { isAgentProvider, type AgentProvider, type TabInfo } from '../../../shared/types';
+import { piSessionIdFromPath } from './pi';
 import {
   herdrRpc,
   listPanes,
@@ -87,7 +88,11 @@ export function indexHerdrAgentPanes(
       sessionId:
         record.agent_session?.kind === 'id' && record.agent_session.value
           ? record.agent_session.value
-          : undefined,
+          : // pi's integration reports the session file rather than an id; the
+            // file is named after the id, so this is the same address.
+            record.agent === 'pi' && record.agent_session?.kind === 'path' && record.agent_session.value
+            ? piSessionIdFromPath(record.agent_session.value)
+            : undefined,
       status: record.agent_status,
     });
   }

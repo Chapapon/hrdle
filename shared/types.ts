@@ -729,6 +729,30 @@ export interface OpenCodeUsageSummary {
 }
 
 /**
+ * pi consumption, from the usage every assistant message in its session file
+ * carries. Same footing as OpenCode: no rate-limit windows to show, and the
+ * cost is the figure pi itself recorded for the turn, absent when no turn in
+ * the window carried one.
+ */
+export interface PiUsageWindow {
+  turns: number;
+  totalTokens: number;
+  inputTokens: number;
+  cacheReadTokens: number;
+  outputTokens: number;
+  reasoningTokens: number;
+  costUsd?: number;
+}
+
+export interface PiUsageSummary {
+  last24h: PiUsageWindow;
+  last7d: PiUsageWindow;
+  models: Array<{ model: string; totalTokens: number; costUsd?: number }>;
+  sessions7d: number;
+  lastTurnAt?: string;
+}
+
+/**
  * Groq's remaining transcription quota, as reported by `x-ratelimit-*` headers
  * on the last transcription this server made. Not polled - Groq has no usage
  * endpoint, so asking would itself spend a request.
@@ -929,6 +953,7 @@ export interface DashboardResponse {
   grokUsage?: GrokUsageSummary | null; // From Grok updates.jsonl turn_completed records
   kimiUsage?: KimiUsageSummary | null; // From Kimi wire.jsonl usage.record records
   opencodeUsage?: OpenCodeUsageSummary | null; // From OpenCode's assistant message rows
+  piUsage?: PiUsageSummary | null; // From the usage on pi's assistant messages
   // Billed OpenRouter spend for the key in ~/.kimi-code/config.toml. Null when
   // no OpenRouter provider is configured or the account can't be reached.
   openRouterUsage?: OpenRouterAccountUsage | null;
