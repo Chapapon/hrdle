@@ -7,7 +7,7 @@ import { blankCursor, isFreeText, lastIndex, RULE, type PickerOption } from './s
  * 2026-09-06:
  *
  *   ────────────────────────────────────────
- *    どのおすすめを知りたいですか？               <- the question
+ *    どのおすすめを知りたいですか？ (590s)        <- the question, and a countdown when the caller set a timeout
  *    → 一蘭のおすすめメニュー                     <- the cursor row
  *      ラーメンの種類ごとのおすすめ
  *      ラーメン店のおすすめ
@@ -19,7 +19,11 @@ import { blankCursor, isFreeText, lastIndex, RULE, type PickerOption } from './s
  * not answer it - text goes nowhere and the Enter after it takes the row the
  * cursor is on, which is how a spoken reply picked the first option.
  */
-const HINT = /↑↓\s*navigate\s+enter\s+select/iu;
+// The middle key is whatever `tui.select.confirm` is bound to, so only the
+// words around it are relied on.
+const HINT = /↑↓\s*navigate\s+\S+\s+select\s+\S+\s+cancel/iu;
+// `ctx.ui.select` given a timeout appends the seconds left to the title.
+const COUNTDOWN = /\s*\(\d+s\)$/u;
 const CURSOR_ROW = /^\s*→\s/u;
 
 export function readPiSelect(lines: string[]): PaneQuestion | undefined {
@@ -45,7 +49,7 @@ export function readPiSelect(lines: string[]): PaneQuestion | undefined {
   if (selected < 0) return undefined;
 
   return {
-    question: block[questionAt].trim(),
+    question: block[questionAt].trim().replace(COUNTDOWN, ''),
     options: rows.map((r) => r.option),
     multiSelect: false,
     choiceInput: 'arrow',

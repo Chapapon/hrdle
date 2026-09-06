@@ -57,7 +57,7 @@ export function detectPaneState(lines: string[]): DetectedPaneState {
   // pi's select prompt (`ctx.ui.select`): no numbers, a cursor row and this
   // footer. Read as a question so nothing presses Enter at it - Enter takes
   // whichever row the cursor is on.
-  if (/↑↓\s*navigate\s+enter\s+select\s+escape\/ctrl\+c\s+cancel/iu.test(joined)) {
+  if (/↑↓\s*navigate\s+\S+\s+select\s+\S+\s+cancel/iu.test(joined)) {
     return 'ask_user_question';
   }
 

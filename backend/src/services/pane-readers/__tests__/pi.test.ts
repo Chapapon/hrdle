@@ -1,12 +1,12 @@
 // Reading pi's select prompt. The fixture is a live 0.84.2 pane, captured on
-// 2026-09-06 while a tool built on `ctx.ui.select` was asking.
+// 2026-09-06 while a tool built on `ctx.ui.select` was asking, with a timeout set.
 import { describe, expect, test } from 'bun:test';
 import { detectPaneState } from '../../pane-state';
 import { readPiSelect } from '../pi';
 
 const SELECT = [
-  ' もう一回 ask_user を出して。選択肢は3つにして',
-  ' ask_user',
+  ' おすすめを 3 つの中から選ばせて',
+  ' choose',
   '──────────────────────────────────────────────────────────────',
   ' どのおすすめを知りたいですか？ (590s)',
   ' → 一蘭のおすすめメニュー',
@@ -21,7 +21,7 @@ const SELECT = [
 describe("pi's select prompt", () => {
   test('is the question, every row, and where the cursor sits', () => {
     const q = readPiSelect(SELECT);
-    expect(q?.question).toBe('どのおすすめを知りたいですか？ (590s)');
+    expect(q?.question).toBe('どのおすすめを知りたいですか？');
     expect(q?.options.map((o) => o.label)).toEqual(['一蘭のおすすめメニュー', 'ラーメンの種類ごとのおすすめ', 'ラーメン店のおすすめ']);
     expect(q).toMatchObject({ multiSelect: false, choiceInput: 'arrow', choiceAxis: 'column', choiceSelected: 0 });
   });
@@ -29,6 +29,12 @@ describe("pi's select prompt", () => {
   test('the cursor can be on a later row', () => {
     const moved = SELECT.map((l) => l.replace(' → 一蘭', '   一蘭').replace('   ラーメン店', ' → ラーメン店'));
     expect(readPiSelect(moved)?.choiceSelected).toBe(2);
+  });
+
+  test('the footer is read whatever the confirm key is bound to', () => {
+    const rebound = SELECT.map((l) => l.replace('enter select', 'tab select'));
+    expect(readPiSelect(rebound)?.options).toHaveLength(3);
+    expect(detectPaneState(rebound)).toBe('ask_user_question');
   });
 
   test('a pane with no prompt reads as nothing', () => {
