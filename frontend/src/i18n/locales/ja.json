@@ -84,7 +84,8 @@
       "codex": "Codex",
       "grok": "Grok",
       "kimi": "Kimi",
-      "opencode": "OpenCode"
+      "opencode": "OpenCode",
+      "pi": "pi"
     },
     "workingDirectory": "作業ディレクトリ",
     "newFolder": "新規フォルダ",
@@ -214,6 +215,13 @@
     "opencodeModelBreakdown": "モデル別（7日間）",
     "opencodeCostRecorded": "記録値",
     "opencodeNoRateLimitInfo": "OpenCode はレート制限情報をローカルに公開していないため、サイクル使用率の代わりにセッションストアから集計したトークン消費量を表示しています。金額は OpenCode 自身がターンごとに記録した値で、こちらの推定ではありません。",
+    "piUsage": "pi 使用量",
+    "piLast24h": "過去24時間",
+    "piLast7d": "過去7日間",
+    "piTurns": "{{count}} ターン",
+    "piModelBreakdown": "モデル別（7日間）",
+    "piCostRecorded": "記録値",
+    "piNoRateLimitInfo": "pi はレート制限情報をローカルに公開していないため、サイクル使用率の代わりにセッションファイルから集計したトークン消費量を表示しています。金額は pi 自身がターンごとに記録した値で、こちらの推定ではありません。",
     "grokUsage": "Grok 使用量",
     "grokLast24h": "過去24時間",
     "grokLast7d": "過去7日間",

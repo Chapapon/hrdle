@@ -22,6 +22,7 @@
 import type { AgentProvider } from '../../../../shared/types';
 import { readClaudePicker } from './claude';
 import { readOpenCodePicker } from './opencode';
+import { readPiSelect } from './pi';
 import type { PickerOption } from './shared';
 import { readGrokPicker } from './grok';
 import { readKimiPrompt } from './kimi';
@@ -102,6 +103,7 @@ const READERS: Partial<Record<AgentProvider, (read: PaneRead) => PaneQuestion | 
   kimi: (r) => readKimiPrompt(r.lines),
   grok: (r) => readGrokPicker(r.lines),
   opencode: readOpenCodePicker,
+  pi: (r) => readPiSelect(r.lines),
 };
 
 /**

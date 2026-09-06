@@ -55,7 +55,7 @@ export async function isAllowedTranscriptPath(path: string): Promise<boolean> {
   } catch {
     return false;
   }
-  for (const dir of ['.claude', '.codex', '.grok', '.kimi-code']) {
+  for (const dir of ['.claude', '.codex', '.grok', '.kimi-code', '.pi']) {
     const root = await realpath(`${homedir()}/${dir}`).catch(() => null);
     if (root && resolved.startsWith(`${root}/`)) return true;
   }
@@ -144,6 +144,52 @@ function generateGrokSmartMessage(entries: Array<Record<string, unknown>>): stri
   return action;
 }
 
+/**
+ * The same message out of a pi transcript. Its records are `{type: "message",
+ * message: {role, content}}` where Claude's are `{type: "assistant", ...}`, a
+ * tool call is a `toolCall` block, and the text that ends the turn is the last
+ * assistant text after the last tool call.
+ */
+export function generatePiSmartMessage(entries: Array<Record<string, unknown>>): string {
+  const tools: string[] = [];
+  let responseText = '';
+  for (const entry of entries) {
+    if (entry.type !== 'message') continue;
+    const message = entry.message as { role?: string; content?: unknown } | undefined;
+    if (!message) continue;
+    if (message.role === 'user') {
+      responseText = '';
+      continue;
+    }
+    if (message.role !== 'assistant' || !Array.isArray(message.content)) continue;
+    for (const block of message.content as Array<{ type?: string; name?: string; text?: string }>) {
+      if (block.type === 'toolCall' && block.name) {
+        if (!tools.includes(block.name)) tools.push(block.name);
+        responseText = '';
+      } else if (block.type === 'text' && typeof block.text === 'string') {
+        responseText = block.text;
+      }
+    }
+  }
+  let action: string;
+  const hasTool = (pattern: RegExp) => tools.some((t) => pattern.test(t));
+  if (hasTool(/edit|write|patch/i)) action = 'Edited files';
+  else if (hasTool(/bash|shell|command|exec/i)) action = 'Ran a command';
+  else if (hasTool(/read|grep|glob|find|search|ls/i)) action = 'Finished investigating';
+  else action = 'Done';
+  let inCodeBlock = false;
+  for (const line of responseText.split('\n')) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith('```')) { inCodeBlock = !inCodeBlock; continue; }
+    if (inCodeBlock) continue;
+    if (trimmed && trimmed.length > 5) {
+      const summary = trimmed.length > 80 ? `${trimmed.slice(0, 77)}...` : trimmed;
+      return `${action}: ${summary}`;
+    }
+  }
+  return action;
+}
+
 /** Builds a context-aware notification message from a transcript file */
 async function generateSmartMessage(transcriptPath: string, _event: string): Promise<string | undefined> {
   try {
@@ -157,6 +203,9 @@ async function generateSmartMessage(transcriptPath: string, _event: string): Pro
     // A Grok transcript has a different line shape than Claude's .jsonl, so it takes its own path
     if (entries.some((e) => e?.method === 'session/update')) {
       return generateGrokSmartMessage(entries);
+    }
+    if (entries.some((e) => e?.type === 'message' && e?.message?.role)) {
+      return generatePiSmartMessage(entries);
     }
 
     // Collect the tools that were used

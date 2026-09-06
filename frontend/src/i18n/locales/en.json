@@ -86,7 +86,8 @@
       "codex": "Codex",
       "grok": "Grok",
       "kimi": "Kimi",
-      "opencode": "OpenCode"
+      "opencode": "OpenCode",
+      "pi": "pi"
     },
     "workingDirectory": "Working Directory",
     "newFolder": "New Folder",
@@ -216,6 +217,13 @@
     "opencodeModelBreakdown": "By model (7 days)",
     "opencodeCostRecorded": "recorded",
     "opencodeNoRateLimitInfo": "OpenCode does not expose rate-limit windows locally, so token totals are aggregated from its session store instead of showing cycle utilization. The cost is the figure OpenCode recorded for each turn, not an estimate of ours.",
+    "piUsage": "pi Usage",
+    "piLast24h": "Last 24 hours",
+    "piLast7d": "Last 7 days",
+    "piTurns": "{{count}} turns",
+    "piModelBreakdown": "By model (7 days)",
+    "piCostRecorded": "recorded",
+    "piNoRateLimitInfo": "pi does not expose rate-limit windows locally, so token totals are aggregated from its session files instead of showing cycle utilization. The cost is the figure pi recorded for each turn, not an estimate of ours.",
     "grokUsage": "Grok Usage",
     "grokLast24h": "Last 24 hours",
     "grokLast7d": "Last 7 days",

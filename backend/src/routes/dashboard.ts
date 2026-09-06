@@ -6,6 +6,7 @@ import { GrokUsageService } from '../services/grok-usage';
 import { KimiUsageService } from '../services/kimi-usage';
 import { KimiConfigService } from '../services/kimi-config';
 import { OpenCodeUsageService } from '../services/opencode-usage';
+import { PiUsageService } from '../services/pi-usage';
 import { OpenRouterAccountService } from '../services/openrouter';
 import { sttUsageService } from '../services/stt-usage';
 import { UsageHistoryService } from '../services/usage-history';
@@ -24,6 +25,7 @@ const grokUsageService = new GrokUsageService();
 const kimiConfigService = new KimiConfigService();
 const kimiUsageService = new KimiUsageService(undefined, kimiConfigService);
 const opencodeUsageService = new OpenCodeUsageService();
+const piUsageService = new PiUsageService();
 // Kimi is the only OpenRouter consumer here, so its config supplies the key.
 const openRouterAccountService = new OpenRouterAccountService(() =>
   kimiConfigService.getOpenRouterApiKey(),
@@ -84,12 +86,13 @@ export async function leg<T>(label: string, work: () => T | Promise<T>, fallback
 export async function buildDashboard(): Promise<DashboardResponse> {
   // The herdr skew check rides on this poll instead of its own timer;
   // it is cached, so the extra spawn is far rarer than the request rate.
-  const [usageLimits, codexUsageLimits, grokUsage, kimiUsage, opencodeUsage, openRouterUsage, sttUsage, dailyActivity, modelUsage, hourlyActivity, usageHistory, systemMetrics, diskUsage, herdrUpdate, hrdleUpdate] = await Promise.all([
+  const [usageLimits, codexUsageLimits, grokUsage, kimiUsage, opencodeUsage, piUsage, openRouterUsage, sttUsage, dailyActivity, modelUsage, hourlyActivity, usageHistory, systemMetrics, diskUsage, herdrUpdate, hrdleUpdate] = await Promise.all([
     leg('anthropic usage', () => anthropicUsageService.getUsageLimits(), null),
     leg('codex usage', () => codexUsageService.getUsageLimits(), null),
     leg('grok usage', () => grokUsageService.getUsageSummary(), null),
     leg('kimi usage', () => kimiUsageService.getUsageSummary(), null),
     leg('opencode usage', () => opencodeUsageService.getUsageSummary(), null),
+    leg('pi usage', () => piUsageService.getUsageSummary(), null),
     leg('openrouter usage', () => openRouterAccountService.getUsage(), null),
     leg('stt usage', () => sttUsageService.getUsageSummary(), null),
     leg('daily activity', () => statsService.getDailyActivity(14), []),
@@ -119,6 +122,7 @@ export async function buildDashboard(): Promise<DashboardResponse> {
     grokUsage,
     kimiUsage,
     opencodeUsage,
+    piUsage,
     openRouterUsage,
     sttUsage,
     usageHistory,

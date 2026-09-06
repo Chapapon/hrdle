@@ -34,7 +34,7 @@ interface DashboardProps {
 	compact?: boolean; // true when in narrow side panel
 }
 
-type AgentTab = "claude" | "codex" | "grok" | "kimi" | "opencode";
+type AgentTab = "claude" | "codex" | "grok" | "kimi" | "opencode" | "pi";
 
 /**
  * One section header, so the three sections read as three sections. The
@@ -95,6 +95,7 @@ export function Dashboard({ className = "", compact = false }: DashboardProps) {
 	const grokUsage = data?.grokUsage;
 	const kimiUsage = data?.kimiUsage;
 	const opencodeUsage = data?.opencodeUsage;
+	const piUsage = data?.piUsage;
 	const openRouterUsage = data?.openRouterUsage;
 	const sttUsage = data?.sttUsage;
 	// Claude is "available" when we have any actionable Claude data. The endpoint
@@ -114,6 +115,7 @@ export function Dashboard({ className = "", compact = false }: DashboardProps) {
 		// billed usage is worth showing even before any session lands in the window.
 		...(kimiUsage || openRouterUsage ? (["kimi"] as const) : []),
 		...(opencodeUsage ? (["opencode"] as const) : []),
+		...(piUsage ? (["pi"] as const) : []),
 	];
 	const showAgentTabs = availableTabs.length > 1;
 	const effectiveTab: AgentTab = availableTabs.includes(agentTab)
@@ -413,6 +415,65 @@ export function Dashboard({ className = "", compact = false }: DashboardProps) {
 										{t("dashboard.opencodeModelBreakdown")}
 									</div>
 									{opencodeUsage?.models.map((m) => (
+										<div
+											key={m.model}
+											className="flex justify-between gap-2 text-xs text-th-text-secondary"
+										>
+											<span className="truncate">{m.model}</span>
+											<span className="shrink-0 tabular-nums">
+												{formatTokens(m.totalTokens)}
+												{m.costUsd !== undefined && (
+													<span className="ml-2 text-emerald-300">
+														{formatUsd(m.costUsd)}
+													</span>
+												)}
+											</span>
+										</div>
+									))}
+								</div>
+							)}
+						</Card>
+					</div>
+				) : effectiveTab === "pi" ? (
+					<div className={gridClass(compact)}>
+						<Card
+							className="md:col-span-2"
+							title={t("dashboard.piUsage")}
+							footnote={t("dashboard.piNoRateLimitInfo")}
+						>
+							<div className="grid grid-cols-2 gap-2.5">
+								{(
+									[
+										["piLast24h", piUsage?.last24h],
+										["piLast7d", piUsage?.last7d],
+									] as const
+								).map(([labelKey, window]) => (
+									<StatTile key={labelKey} label={t(`dashboard.${labelKey}`)}>
+										<div className="text-lg font-semibold text-th-text tabular-nums">
+											{formatTokens(window?.totalTokens ?? 0)}
+										</div>
+										<div className="text-[11px] text-th-text-muted">
+											{t("dashboard.piTurns", { count: window?.turns ?? 0 })}
+										</div>
+										{window?.costUsd !== undefined && (
+											<div className="mt-1.5 pt-1.5 border-t border-white/[0.06]">
+												<span className="text-sm font-semibold text-emerald-300 tabular-nums">
+													{formatUsd(window.costUsd)}
+												</span>
+												<span className="ml-1 text-[10px] text-th-text-muted">
+													{t("dashboard.piCostRecorded")}
+												</span>
+											</div>
+										)}
+									</StatTile>
+								))}
+							</div>
+							{(piUsage?.models.length ?? 0) > 0 && (
+								<div className="mt-3 space-y-1">
+									<div className="text-[11px] text-th-text-muted">
+										{t("dashboard.piModelBreakdown")}
+									</div>
+									{piUsage?.models.map((m) => (
 										<div
 											key={m.model}
 											className="flex justify-between gap-2 text-xs text-th-text-secondary"

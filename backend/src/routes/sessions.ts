@@ -19,6 +19,9 @@ import { KimiService } from '../services/kimi';
 import { KimiHistoryService } from '../services/kimi-history';
 import { OpenCodeService } from '../services/opencode';
 import { OpenCodeHistoryService } from '../services/opencode-history';
+import { PiService } from '../services/pi';
+import { PiHistoryService } from '../services/pi-history';
+import { piTurnWatcher } from '../services/pi-turn-notify';
 import type { AgentHistoryProvider, AgentThread, AgentThreadService } from '../services/agent-providers';
 import { PromptHistoryService } from '../services/prompt-history';
 import { getAllSessionMetadata, setSessionTheme, setSessionSttPrompt, setSessionSttGlossary, addSessionSttTerms, getLastKnownSessions, saveLastKnownSessions, removeLastKnownSession, type LastKnownSession } from '../services/session-metadata';
@@ -50,12 +53,14 @@ const threadServices: Partial<Record<AgentProvider, AgentThreadService>> = {
   grok: new GrokService(),
   kimi: new KimiService(),
   opencode: new OpenCodeService(),
+  pi: new PiService(),
 };
 export const agentHistoryProviders: Partial<Record<AgentProvider, AgentHistoryProvider>> = {
   codex: new CodexHistoryService(undefined, codexConversationService),
   grok: new GrokHistoryService(),
   kimi: new KimiHistoryService(),
   opencode: new OpenCodeHistoryService(),
+  pi: new PiHistoryService(),
 };
 const promptHistoryService = new PromptHistoryService();
 
@@ -237,6 +242,12 @@ export const sessions = new Hono();
 /** Build the full sessions list (shared by HTTP handler and WS push) */
 export async function buildSessionsList(): Promise<ExtendedSessionResponse[]> {
   const herdrSessions = await herdrService.listWorkspaces();
+  // pi has no hook to announce a finished turn; its live session files are watched instead.
+  void piTurnWatcher.track(
+    herdrSessions
+      .filter((s): s is typeof s & { agentSessionId: string } => (s.agent ?? s.currentCommand) === 'pi' && !!s.agentSessionId)
+      .map((s) => ({ sessionId: s.agentSessionId, cwd: s.currentPath })),
+  );
   const sessionMetadata = await getAllSessionMetadata();
 
   // Enrich thread-based agents by the exact native session ids from herdr.
