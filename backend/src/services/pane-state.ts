@@ -54,6 +54,13 @@ export function detectPaneState(lines: string[]): DetectedPaneState {
     return 'ask_user_question';
   }
 
+  // pi's select prompt (`ctx.ui.select`): no numbers, a cursor row and this
+  // footer. Read as a question so nothing presses Enter at it - Enter takes
+  // whichever row the cursor is on.
+  if (/↑↓\s*navigate\s+enter\s+select\s+escape\/ctrl\+c\s+cancel/iu.test(joined)) {
+    return 'ask_user_question';
+  }
+
   // Processing — Claude Code spinner has these signatures, in priority order.
   // The spinner verb changes per release (Kneading, Brewing, Channeling, …);
   // we match its structure rather than the verb itself.
