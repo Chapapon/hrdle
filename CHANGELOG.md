@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.192] - 2026-09-06
+
+### Added
+- **pi is an agent hrdle knows.** herdr already runs it and reports it, and
+  hrdle dropped that record at the door - an agent id with no registry entry is
+  no agent - so a pi session listed as a shell, nothing spoken from the glasses
+  could reach it, and it finished in silence. It now joins Claude Code, Codex,
+  Grok, Kimi and OpenCode: the session list, the conversation view, and a usage
+  tab carrying the cost pi recorded for each turn. Its transcripts are read head
+  and tail rather than whole, because a tool result can carry an image. Nothing
+  needs installing in pi - the file is what pi writes for itself. Thanks to
+  @Chapapon (#546)
+  - **A finished turn arrives as a `Stop`.** pi has extensions rather than
+    hooks, and an extension has to be installed, so a bare pi would be the one
+    agent that finished without saying so. It writes every turn down, though,
+    and the assistant message ending one is marked as such - so the live
+    sessions' files are watched and that record is posted to `/api/notify` in
+    process, as the body a hook would have sent. The indicator, the
+    notification, the glasses relay and the push cannot tell the difference
+  - **Its select prompt is read off the pane.** No row in it carries a number,
+    so the answer is the cursor walked to a row and Enter - and typing into it
+    answers nothing, which is how a spoken reply used to pick the first option
+    every time. It reaches the glasses as a choice card answered by keys, and
+    the pane is called a question so nothing presses Enter at it
+  - A pi prompt waiting on a bare pi still reports `working` until herdr's own
+    integration maps the events for it; the reader is ready for that state and
+    does not pretend to have it
+
 ## [0.3.191] - 2026-08-29
 
 ### Fixed
