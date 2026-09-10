@@ -48,17 +48,22 @@ async function getModelMap(): Promise<Map<string, number>> {
   if (cache && now - cache.timestamp < CACHE_TTL_MS && cache.map.size > 0) {
     return cache.map;
   }
-  if (inflight) return inflight;
-  inflight = fetchModels();
-  try {
-    const map = await inflight;
-    if (map.size > 0) {
-      cache = { timestamp: now, map };
-    }
-    return cache?.map ?? map;
-  } finally {
-    inflight = null;
+  if (!inflight) {
+    inflight = fetchModels()
+      .then((map) => {
+        if (map.size > 0) cache = { timestamp: now, map };
+        return map;
+      })
+      .finally(() => {
+        inflight = null;
+      });
   }
+  // Every caller of a failed refresh gets the last catalog, not only the one
+  // that started the refresh. The callers that joined it were handed the
+  // empty result instead, and with the session list computing every session
+  // at once, one refresh gave the same model two windows.
+  const map = await inflight;
+  return cache?.map ?? map;
 }
 
 /**
@@ -87,6 +92,11 @@ export async function getMaxInputTokens(modelId: string | undefined): Promise<nu
 export function forgetModelCatalogForTest(): void {
   cache = null;
   inflight = null;
+}
+
+/** Tests only: keep the catalog but make it due for a refresh. */
+export function ageModelCatalogForTest(): void {
+  if (cache) cache = { ...cache, timestamp: 0 };
 }
 
 /** Tests only: forget the windows already resolved. */

@@ -4,7 +4,7 @@ mock.module('../../utils/claude-credentials', () => ({
   getClaudeAccessToken: async () => 'token',
 }));
 
-const { forgetKnownWindowsForTest, forgetModelCatalogForTest, getMaxInputTokens } = await import('../anthropic-models');
+const { ageModelCatalogForTest, forgetKnownWindowsForTest, forgetModelCatalogForTest, getMaxInputTokens } = await import('../anthropic-models');
 
 const realFetch = globalThis.fetch;
 
@@ -33,6 +33,21 @@ describe('the context window of a model', () => {
   test('is the flat fallback for a model the catalog has never listed', async () => {
     globalThis.fetch = listing({ 'claude-opus-5': 1_000_000 }) as typeof fetch;
     expect(await getMaxInputTokens('claude-fable-5')).toBe(200_000);
+  });
+
+  test('is the same for every caller of a refresh that fails', async () => {
+    // The flicker's root: the caller that started a failed refresh got the
+    // stale catalog, and the callers that joined it got the empty result.
+    globalThis.fetch = listing({ 'claude-fable-5': 1_000_000 }) as typeof fetch;
+    expect(await getMaxInputTokens('claude-fable-5')).toBe(1_000_000);
+    forgetKnownWindowsForTest();
+    ageModelCatalogForTest();
+    globalThis.fetch = (async () => {
+      await new Promise((r) => setTimeout(r, 20));
+      return new Response('', { status: 401 });
+    }) as typeof fetch;
+    const windows = await Promise.all(Array.from({ length: 5 }, () => getMaxInputTokens('claude-fable-5')));
+    expect(windows).toEqual([1_000_000, 1_000_000, 1_000_000, 1_000_000, 1_000_000]);
   });
 
   test('is not forgotten when a later listing leaves the model out', async () => {
