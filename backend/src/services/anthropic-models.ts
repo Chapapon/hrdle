@@ -61,8 +61,35 @@ async function getModelMap(): Promise<Map<string, number>> {
   }
 }
 
+/**
+ * Windows resolved once, by model id, kept for the life of the process.
+ *
+ * A model can be in one listing and not the next - a new one the catalog
+ * carries intermittently - and every listing with anything in it replaces the
+ * cache. With the flat fallback answering the misses, a session's window
+ * halved and its bar jumped to 100% between one refresh and the next, then
+ * back. A window once read is not forgotten for a listing that left it out.
+ */
+const known = new Map<string, number>();
+
 export async function getMaxInputTokens(modelId: string | undefined): Promise<number> {
   if (!modelId) return FALLBACK_MAX_TOKENS;
   const map = await getModelMap();
-  return map.get(modelId) ?? FALLBACK_MAX_TOKENS;
+  const fresh = map.get(modelId);
+  if (fresh) {
+    known.set(modelId, fresh);
+    return fresh;
+  }
+  return known.get(modelId) ?? FALLBACK_MAX_TOKENS;
+}
+
+/** Tests only: forget the catalog so the next call fetches again. */
+export function forgetModelCatalogForTest(): void {
+  cache = null;
+  inflight = null;
+}
+
+/** Tests only: forget the windows already resolved. */
+export function forgetKnownWindowsForTest(): void {
+  known.clear();
 }
