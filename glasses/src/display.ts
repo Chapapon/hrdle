@@ -1460,8 +1460,19 @@ function conversationContent(state: AppState): {
   // not going to leave.
   const pinned = state.autoAdvance === false
   const scrolled = state.conversationOffset > 0 || state.conversationPage > 0
-  const back = pinned || scrolled ? 'dbl:top' : 'dbl:back'
-  const answerable = state.relayWaiting.length > 0 || waiting
+  // What a tap does is decided by one thing: whether a question card is
+  // queued (the tap answers it, or jumps to it when it is another session's).
+  // herdr calling the pane blocked is not that - claude sits blocked between
+  // turns, and an agent with no reader for its prompt is blocked with no card
+  // - and on such a pane the tap opens the input, so the footer says so
+  // rather than promising a response that will not come. The demo has no
+  // cards and answers on the session's own state, so it is the exception.
+  const hasCard = state.relayWaiting.length > 0
+  const responds = hasCard || (state.demo === true && waiting)
+  // The double-tap, in the order the controller takes it: a pin comes off
+  // first, then a card is put off, then a read scrolls back to the top, and
+  // only then does it leave.
+  const dbl = pinned ? 'dbl:top' : hasCard ? 'dbl:later' : scrolled ? 'dbl:top' : 'dbl:back'
   // One direction named and not the other reads as a rule about which way the
   // conversation goes; both named fills a footer that has a page number to
   // fit. Neither, then - the same as before, and the swipe is found the way
@@ -1469,9 +1480,7 @@ function conversationContent(state: AppState): {
   // `input`, not `speak`: the tap arrives at the microphone's screen and the
   // hold there is what opens it. A footer promising speech on a gesture that
   // only changes screens is one the wearer finds out is wrong by trying it.
-  const action = !pinned && state.relayWaiting.length > 0
-    ? 'tap:respond  dbl:later'
-    : answerable ? `tap:respond  tap:input  ${back}` : `tap:input  ${back}`
+  const action = `${responds ? 'tap:respond' : 'tap:input'}  ${dbl}`
   // Who is speaking is in the body — the user's turn carries `$` and the
   // agent's carries nothing — so repeating it here said nothing twice. The
   // message counter went with it: its denominator was the number of messages

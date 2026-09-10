@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { OsEventTypeList } from '@evenrealities/even_hub_sdk'
 import { sanitizeForG2, formatMessage } from '../types.ts'
+import type { GlassesRelayItem } from '../types.ts'
 import { invalidatePanel, panelDrops, screenText, updateDisplay, updateHeader, wrapForPanel, wrapHeader } from '../display.ts'
 import {
   BAR_H,
@@ -883,6 +884,23 @@ describe('workspace and pane list', () => {
     const body = screenText(st(1, '%1')).body
     expect(body).toContain('ctx:▃ 30%')
     expect(body).toContain('ctx:▂ 15%')
+  })
+
+  test('the footer names the one thing a tap does', () => {
+    // A pane herdr calls blocked with no question card behind it: the tap
+    // opens the input, so that is the verb - not a pair of them.
+    const blocked = { ...st(1, '%1'), mode: 'conversation' as const, sessions: sessions.map((s) => s.id === 'b' ? { ...s, panes: (s.panes ?? []).map((p) => ({ ...p, indicatorState: 'waiting_input' as const })) } : s) }
+    expect(screenText(blocked).footer).toMatch(/^tap:input  dbl:back/)
+    expect(screenText(blocked).footer).not.toContain('tap:respond')
+    // A card queued and the read pinned: the tap answers, the double-tap unpins.
+    const card = { id: 'q', sessionId: 'b', paneId: '%1', kind: 'waiting', text: 'which?', source: 'auto', createdAt: 1 } as GlassesRelayItem
+    const pinnedCard = { ...blocked, relayWaiting: [card], autoAdvance: false }
+    expect(screenText(pinnedCard).footer).toMatch(/^tap:respond  dbl:top/)
+    expect(screenText(pinnedCard).footer).not.toContain('tap:input')
+    // A card while scrolled back: the double-tap puts the card off first.
+    expect(screenText({ ...blocked, relayWaiting: [card], conversationPage: 2 }).footer).toMatch(/^tap:respond  dbl:later/)
+    // The demo scripts its own picker off the session's state, with no card.
+    expect(screenText({ ...blocked, demo: true }).footer).toMatch(/^tap:respond  dbl:back/)
   })
 
   test('the conversation footer carries the context of what is being read, and the model while it fits', () => {
