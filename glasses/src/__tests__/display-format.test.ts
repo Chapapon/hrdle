@@ -865,10 +865,41 @@ describe('workspace and pane list', () => {
     expect(width(footer)).toBeLessThanOrEqual(HEADER_WIDTH)
   })
 
+  test('a heading carries no model or context in the footer', () => {
+    // The workspace's figures are one pane's, chosen by the server, and the
+    // reader cannot tell whose. A pane row says its own, on the row.
+    expect(screenText(st(1)).footer).not.toMatch(/%|ctx/)
+    expect(screenText(st(1, '%1')).body).toMatch(/30%/)
+  })
+
   test('the footer says what a tap does on a heading', () => {
     expect(screenText(st(1)).footer).toContain('tap:unfold')
     expect(screenText({ ...st(1), expandedWorkspaces: ['b'] }).footer).toContain('tap:fold')
     expect(screenText(st(1, '%1')).footer).toContain('tap:open')
+  })
+
+  test('a row says how full in figures as well as in height', () => {
+    // Eight heights alone could not say how close to the top a bar was.
+    const body = screenText(st(1, '%1')).body
+    expect(body).toContain('ctx:▃ 30%')
+    expect(body).toContain('ctx:▂ 15%')
+  })
+
+  test('the conversation footer carries the context of what is being read, and the model while it fits', () => {
+    const conv = { ...st(1, '%2'), mode: 'conversation' as const }
+    expect(screenText(conv).footer).toMatch(/ctx:▂ 15%$/)
+    const withModel = (model: string) => ({
+      ...conv,
+      sessions: [sessions[0], { ...sessions[1], panes: (sessions[1].panes ?? []).map((p) => ({ ...p, metrics: { ...p.metrics, model } })) }, sessions[2]],
+    })
+    expect(screenText(withModel('claude-fable-5-1')).footer).toMatch(/ctx:▂ 15%  Fable 5\.1$/)
+    // A name that would push the bar past its edge wraps onto a second line,
+    // which this bar cannot clip; the model is what goes, the context stays.
+    const footer = screenText(withModel('vendor/a-model-with-a-very-long-name-that-cannot-fit-on-the-bar-at-all')).footer
+    expect(width(footer)).toBeLessThanOrEqual(HEADER_WIDTH)
+    expect(footer).toMatch(/ctx:▂ 15%$/)
+    // The workspace's own figure when no pane is chosen, and nothing when there is none.
+    expect(screenText({ ...st(2), mode: 'conversation' as const }).footer).not.toContain('ctx:')
   })
 
   test('the list screen has no header', () => {
@@ -879,7 +910,7 @@ describe('workspace and pane list', () => {
     // Two panes of one repo repeat the same folder name; the second one
     // teaches the reader nothing.
     const body = screenText(st(1, '%1')).body
-    expect(body).toContain('     %1 ctx:▃')
+    expect(body).toContain('     %1 ctx:▃ 30%')
     expect(body).not.toContain('wheel-leg-bot')
   })
 
@@ -888,19 +919,19 @@ describe('workspace and pane list', () => {
     // to travel to and back from to see whose row it was. The label is what
     // makes a lone block legible.
     const lines = screenText(st(1, '%1')).body.split('\n')
-    const marked = lines.filter((l) => /ctx:[▁▂▃▄▅▆▇█]$/.test(l))
+    const marked = lines.filter((l) => /ctx:[▁▂▃▄▅▆▇█] \d+%$/.test(l))
     expect(marked.length).toBeGreaterThan(1)
     for (const line of marked) expect(width(line)).toBeLessThanOrEqual(BODY_WIDTH)
   })
 
-  test('the list shows how full without spelling it out', () => {
+  test('the list shows how full in height and in figures', () => {
     // Eight block heights, filling as the context does - the tall row is the
     // one running out, findable without reading a single number. The figure
-    // itself is one row's worth of detail and lives in the footer.
+    // rides beside it: heights alone could not say how close to the top a
+    // bar was, which is what a reader stopping on a row wants to know.
     const body = screenText(st(1, '%1')).body
-    expect(body).toContain('▃')
-    expect(body).toContain('▂')
-    expect(body).not.toMatch(/\d+%/)
+    expect(body).toContain('▃ 30%')
+    expect(body).toContain('▂ 15%')
   })
 
   test('a heading leaves the mark to the panes under it', () => {
@@ -951,7 +982,7 @@ describe('panes across tabs', () => {
     // It was marked while a reply to it could not land. The server switches
     // tabs to deliver now, so the tab is a fact with no decision attached.
     const body = screenText(st).body
-    expect(body).toContain('%1 ctx:▃')
+    expect(body).toContain('%1 ctx:▃ 31%')
     expect(body).toContain('%4 ctx:▁')
     expect(body).not.toContain('別タブ')
   })
@@ -982,14 +1013,15 @@ describe('what a list row says about the agent', () => {
     )
   })
 
-  test('the figures belong to the row being pointed at', () => {
-    // Printed on all thirteen rows they are the same two facts thirteen times;
-    // the model rarely differs, and nobody compares percents digit by digit
-    // while walking a list.
+  test('the model belongs to the footer, the percent to the row', () => {
+    // The model is the same fact on every row and rarely differs, so it sits
+    // in the footer for the row being pointed at; the percent is on the row,
+    // beside the glyph, and is not repeated in the footer.
     const { body, footer } = screenText(mk({ contextPercent: 42.1, model: 'claude-opus-5' }))
-    expect(footer).toContain('Opus 5 42%')
+    expect(footer).toContain('Opus 5')
+    expect(footer).not.toMatch(/42%/)
     expect(body).not.toContain('Opus')
-    expect(body).not.toContain('42%')
+    expect(body).toContain('42%')
   })
 
   test('the model is the family and its version, not the id', () => {
@@ -1009,7 +1041,7 @@ describe('what a list row says about the agent', () => {
     // Rounded to the figure the footer shows, so 99.6% is not a full bar
     // beside a number that says otherwise.
     expect(screenText(mk({ contextPercent: 99.6 })).body).toContain('█')
-    expect(screenText(mk({ contextPercent: 99.6 })).footer).toContain('100%')
+    expect(screenText(mk({ contextPercent: 99.6 })).body).toContain('100%')
   })
 
   test('a workspace with neither says nothing in their place', () => {
@@ -1028,7 +1060,8 @@ describe('what a list row says about the agent', () => {
         { id: 'r1', sessionId: 'a', kind: 'waiting' as const, text: 'x', source: 'auto' as const, createdAt: 0 },
       ],
     }).footer
-    expect(footer).toContain('Opus 5 42%')
+    expect(footer).toContain('Opus 5')
+    expect(footer).not.toMatch(/42%/)
     expect(width(footer)).toBeLessThanOrEqual(HEADER_WIDTH)
   })
 
@@ -1039,7 +1072,7 @@ describe('what a list row says about the agent', () => {
       sessions: [{ id: 'a', name: long, state: 'idle' as const, metrics: { contextPercent: 42, model: 'claude-opus-5' } }],
     }).body
     // The mark was the part added; a clipped name still names its row.
-    expect(body).toMatch(/ctx:▄$/)
+    expect(body).toMatch(/ctx:▄ 42%$/)
     expect(body).toContain('…')
     expect(width(body)).toBeLessThanOrEqual(BODY_WIDTH)
   })

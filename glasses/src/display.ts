@@ -1002,13 +1002,23 @@ function modelShort(model: string | undefined): string {
  */
 function ctxMark(m: RowMetrics | undefined): string {
   const pct = m?.contextPercent
-  return pct != null ? ctxGlyph(pct) : ''
+  // The glyph and the figure: the glyph is for the eye running down the
+  // list (the tall one is the one running out), the figure for the eye that
+  // has stopped on a row. Eight heights alone left the reader unable to say
+  // how close to the top a bar was, which is the question it is there for.
+  return pct != null ? `${ctxGlyph(pct)} ${Math.round(pct)}%` : ''
 }
 
-/** The figures behind the glyph, for the one row the cursor is on. */
+/** The same mark the row carries, labelled, for a bar of its own. */
+function ctxFigure(m: RowMetrics | undefined): string {
+  const mark = ctxMark(m)
+  return mark ? `ctx:${mark}` : ''
+}
+
+/** The model behind the glyph, for the one row the cursor is on. The percent
+ *  is not repeated here - it is on the row itself, beside the glyph. */
 function metricsDetail(m: RowMetrics | undefined): string {
-  const pct = m?.contextPercent
-  return [modelShort(m?.model), pct != null ? `${Math.round(pct)}%` : ''].filter(Boolean).join(' ')
+  return modelShort(m?.model)
 }
 
 /**
@@ -1478,6 +1488,16 @@ function conversationContent(state: AppState): {
   // else - and shown as its presence rather than its absence, so the reader who
   // stopped it sees the word go and knows their gesture landed.
   const auto = state.autoAdvance === false ? '' : '  auto'
+  // How full the context of the conversation being read is, the same figure
+  // the list shows on its row. The pane's when a pane is being read.
+  const metrics = pane ? pane.metrics : session?.metrics
+  const ctx = ctxFigure(metrics)
+  const hints = `${pageInfo ? `${action}  ${pageInfo.trim()}` : action}${auto}${ctx ? `  ${ctx}` : ''}`
+  // The model too, while it fits. This bar has no clock to give up and no
+  // way to clip, so a footer past the edge wraps onto a second line and
+  // takes it from the conversation; the model is the part that yields.
+  const model = modelShort(metrics?.model)
+  const withModel = model ? `${hints}  ${model}` : hints
   return {
     noticeText,
     headerText: withClock(
@@ -1485,7 +1505,7 @@ function conversationContent(state: AppState): {
       `${statusBadge}${noticeMark}${demoTail}`,
     ),
     bodyText,
-    footerText: `${pageInfo ? `${action}  ${pageInfo.trim()}` : action}${auto}`,
+    footerText: textWidth(withModel) <= HEADER_WIDTH ? withModel : hints,
   }
 }
 
@@ -1525,7 +1545,10 @@ function sessionListFooter(state: AppState): string {
   // the tail so it outlives the gesture hints when the bar runs short: the
   // hints say what every row does and can be learned once, where this changes
   // with every swipe and is the reason to swipe at all.
-  const detail = metricsDetail(cursorMetrics(state, at))
+  // A heading has no detail: its workspace's figures are one pane's - the
+  // pane the server picked to stand for it - shown as if they were the
+  // workspace's, and the reader cannot tell whose. The rows underneath say.
+  const detail = at?.header ? '' : metricsDetail(cursorMetrics(state, at))
   const demoTail = state.demo ? DEMO_TAIL : ''
   return withClock(`${open}  swipe:nav  ${cursor + 1}/${total}${badge}`, `${detail ? `  ${detail}` : ''}${demoTail}`)
 }
