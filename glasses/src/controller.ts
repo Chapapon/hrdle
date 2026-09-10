@@ -2811,6 +2811,14 @@ export class GlassesController {
     } else {
       st.sessions = this.sortSessions(sessions)
     }
+    // A fold remembered for a workspace that is gone is dropped with it.
+    // herdr's ids advance and are not reused while a server runs, but a
+    // server started from nothing counts from the beginning again, and a
+    // new workspace under an old id must not come up open for something
+    // the wearer did to its predecessor.
+    if (st.expandedWorkspaces?.length) {
+      st.expandedWorkspaces = st.expandedWorkspaces.filter((id) => st.sessions.some((s) => s.id === id))
+    }
     // Re-find the previously selected session
     if (prevId) {
       const newIdx = st.sessions.findIndex((s) => s.id === prevId)
